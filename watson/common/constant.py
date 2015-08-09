@@ -4,7 +4,7 @@ import logging
 
 ENVIRONMENT = {
     "development": {
-        "log.name": "bcbiovm-devel",
+        "log.name": "watson",
         "log.cli_level": logging.DEBUG,
         "log.file_level": logging.DEBUG,
         "log.format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
