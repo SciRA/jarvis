@@ -1,4 +1,5 @@
 #! /usr/bin/env python
+"""ASCon (Web App Security Control) install script."""
 
 try:
     from setuptools import setup
@@ -11,9 +12,8 @@ setup(
     version="0.1",
     description="",
     long_description=open("README.md").read(),
-    author="Alexandru Coman",
-    author_email="contact@alexcoman.com",
-    url="https://github.com/alexandrucoman/watson",
+    author="c-square",
+    url="https://github.com/c-square/watson",
     packages=["watson"],
     scripts=["scripts/watson"],
     requires=["redis"]
