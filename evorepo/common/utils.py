@@ -2,7 +2,7 @@
 import sys
 import logging
 
-from watson import config as global_config
+from evorepo import config as global_config
 
 
 def get_logger(name=None, format_string=None):

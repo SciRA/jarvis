@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-"""ASCon (Web App Security Control) install script."""
+"""EvoRepo project install script."""
 
 try:
     from setuptools import setup
@@ -8,13 +8,13 @@ except ImportError:
 
 
 setup(
-    name="watson",
+    name="evorepo",
     version="0.1",
     description="",
     long_description=open("README.md").read(),
     author="c-square",
-    url="https://github.com/c-square/watson",
-    packages=["watson"],
-    scripts=["scripts/watson"],
-    requires=["redis"]
+    url="https://github.com/c-square/evorepo-common",
+    packages=["evorepo"],
+    scripts=["scripts/evorepo"],
+    requires=[]
 )
