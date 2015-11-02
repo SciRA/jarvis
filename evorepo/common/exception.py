@@ -1,8 +1,8 @@
 """Watson's base exception handling."""
 
 
-class WatsonException(Exception):
-    """Base watson exception
+class EvoRepoException(Exception):
+    """Base EvoRepo exception used across the project.
 
     To correctly use this class, inherit from it and define
     a `template` property.

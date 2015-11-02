@@ -1,4 +1,4 @@
-from watson.common import constant
+from evorepo.common import constant
 
 
 class _NameSpace(object):
