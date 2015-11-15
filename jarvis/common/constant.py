@@ -1,10 +1,10 @@
-"""Shared constants across the Watson project."""
+"""Shared constants across the Jarvis project."""
 import logging
 
 
 ENVIRONMENT = {
     "development": {
-        "log.name": "evorepo",
+        "log.name": "jarvis-dev",
         "log.cli_level": logging.DEBUG,
         "log.file_level": logging.DEBUG,
         "log.format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -13,7 +13,7 @@ ENVIRONMENT = {
         "misc.retry_interval": 0.1,
     },
     "production": {
-        "log.name": "bcbiovm",
+        "log.name": "jarvis",
         "log.cli_level": logging.INFO,
         "log.file_level": logging.INFO,
         "log.format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",

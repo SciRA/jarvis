@@ -1,0 +1,14 @@
+#! /usr/bin/env python
+"""Jarvis command line application."""
+
+import argparse
+
+
+def main():
+    """Jarvis client application"""
+    parser = argparse.ArgumentParser(description="Jarvis")
+    parser.parse_args()
+
+
+if __name__ == "__main__":
+    main()
