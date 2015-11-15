@@ -1,6 +1,5 @@
-"""Run bcbio-nextgen installations inside of virtual machines
-and containers.
-"""
+"""Jarvis global configurations."""
+
 import os
 import sys
 import logging
@@ -135,7 +134,7 @@ class _Config(object):
     def update(self):
         """Update fields from local storage."""
 
-        # Load all the environment variables related to bcbio project.
+        # Load all the environment variables related to jarvis project.
         environ = {"env.{0}".format(key): os.environ[key]
                    for key in _ENVIRONMENT if key in os.environ}
         for configurations in (self._defaults, self._environment, environ):

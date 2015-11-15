@@ -36,3 +36,10 @@ class JarvisException(Exception):
                        {"template": message, "kwargs": kwargs})
 
         super(JarvisException, self).__init__(message)
+
+
+class NotSupported(JarvisException):
+
+    """The functionality required is not available in the current context."""
+
+    template = "%(feature)s is not available in %(context)s."
