@@ -5,7 +5,7 @@ import threading
 
 import six
 
-from evorepo import config as global_config
+from jarvis import config as global_config
 
 
 @six.add_metaclass(abc.ABCMeta)

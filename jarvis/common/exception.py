@@ -1,8 +1,8 @@
 """Watson's base exception handling."""
 
 
-class EvoRepoException(Exception):
-    """Base EvoRepo exception used across the project.
+class JarvisException(Exception):
+    """Base Jarvis exception used across the project.
 
     To correctly use this class, inherit from it and define
     a `template` property.
@@ -12,7 +12,7 @@ class EvoRepoException(Exception):
 
     Example:
     ::
-        class NotFound(WatsonException):
+        class NotFound(JarvisException):
             '''The required object is not available in container.'''
 
             template = "The %(object)r was not found in %(container)s."
@@ -35,4 +35,11 @@ class EvoRepoException(Exception):
                        "missing info: %(kwargs)s" %
                        {"template": message, "kwargs": kwargs})
 
-        super(WatsonException, self).__init__(message)
+        super(JarvisException, self).__init__(message)
+
+
+class NotSupported(JarvisException):
+
+    """The functionality required is not available in the current context."""
+
+    template = "%(feature)s is not available in %(context)s."

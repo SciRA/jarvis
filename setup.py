@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-"""EvoRepo project install script."""
+"""Jarvis project install script."""
 
 try:
     from setuptools import setup
@@ -8,13 +8,13 @@ except ImportError:
 
 
 setup(
-    name="evorepo",
+    name="jarvis",
     version="0.1",
-    description="",
+    description="Just A Rather Very Intelligent System",
     long_description=open("README.md").read(),
     author="c-square",
     url="https://github.com/c-square/evorepo-common",
-    packages=["evorepo"],
-    scripts=["scripts/evorepo"],
+    packages=["jarvis"],
+    scripts=["scripts/jarvis"],
     requires=[]
 )

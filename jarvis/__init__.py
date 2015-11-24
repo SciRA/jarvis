@@ -1,0 +1,230 @@
+"""Jarvis global configurations."""
+
+import os
+import sys
+import logging
+
+from jarvis.common import constant
+
+__all__ = ["config", "log"]
+
+_ENVIRONMENT = ("JARVIS_ENV", )
+
+
+class _NameSpace(object):
+
+    """Wrapper over the Config's namespaces."""
+
+    def __init__(self, data, name, fields):
+        self._data = data
+        self._name = name
+        self._fields = fields
+
+    def __str__(self):
+        """String representation for current task."""
+        return "<Namespace {}>".format(self._name)
+
+    def __setattr__(self, name, value):
+        """Hook set attribute method for update the received item
+        from config.
+        """
+        if name.startswith("_"):
+            self.__dict__[name] = value
+        else:
+            key = self._key(name)
+            self._data[key] = value
+
+    def __setitem__(self, name, value):
+        """Hook set item method for update the received item
+        from config.
+        """
+        key = self._key(name)
+        self._data[key] = value
+
+    def __getattr__(self, name):
+        """Hook for getting attributes from local storage"""
+        fields = self.__dict__.get("_fields", ())
+        if name in fields:
+            key = self._key(name)
+            return self._data[key]
+
+        raise AttributeError("'NameSpace' object has no attribute '{}'"
+                             .format(name))
+
+    def __getitem__(self, key):
+        """Hook for getting items from local storage"""
+        key_name = self._key(key)
+        if key_name in self._data:
+            return self._data[key_name]
+
+        raise KeyError(key)
+
+    def _key(self, field):
+        """Return the key name for the received field."""
+        return "{}.{}".format(self._name, field)
+
+    def get(self, field, default=None):
+        """Return the value of the received field if exists."""
+        try:
+            return self[self._key(field)]
+        except KeyError:
+            return default
+
+    def fields(self):
+        """The fields available in the current namespace."""
+        return list(self._fields)
+
+
+class _Config(object):
+
+    """Container for global config values."""
+
+    def __init__(self, defaults=None, environment=None):
+        if environment is None:
+            environment = os.environ.get("BCBIO_ENV", "production")
+
+        self._data = {}
+        self._defaults = defaults or {}
+        self._environment = constant.ENVIRONMENT.get(environment, {})
+        self._namespace = {}
+
+    def __str__(self):
+        """String representation for current task."""
+        return "<Config: {}>".format(self._data.keys())
+
+    def __setitem__(self, name, value):
+        """Hook set attribute method for update the received item
+        from config.
+        """
+        if "." in name:
+            self._update_namespace((name, ))
+            self._data[name] = value
+
+    def __getitem__(self, key):
+        """Hook for getting items from local storage"""
+        if key in self._data:
+            return self._data[key]
+        raise KeyError(key)
+
+    def __getattr__(self, name):
+        """Hook for getting attributes from local storage"""
+        namespace = self.__dict__.get("_namespace")
+        if namespace and name in namespace:
+            return _NameSpace(self._data, name, namespace[name])
+
+        raise AttributeError("'Config' object has no attribute '{}'"
+                             .format(name))
+
+    def _update_namespace(self, configurations):
+        """Create the namespaces required by the current configurations."""
+        for item in configurations:
+            if "." not in item:
+                continue
+            key, value = item.split('.', 1)
+            namaspace = self._namespace.setdefault(key, set())
+            namaspace.add(value)
+
+    def get(self, key, default=None):
+        """Return the value of the received key if exists."""
+        try:
+            return self[key]
+        except KeyError:
+            return default
+
+    def update(self):
+        """Update fields from local storage."""
+
+        # Load all the environment variables related to jarvis project.
+        environ = {"env.{0}".format(key): os.environ[key]
+                   for key in _ENVIRONMENT if key in os.environ}
+        for configurations in (self._defaults, self._environment, environ):
+            self._data.update(configurations)
+            self._update_namespace(configurations)
+
+
+class _Logging(object):
+
+    """Factory for all the loggers used across the project."""
+
+    def __init__(self):
+        self._loggers = {}
+
+    @classmethod
+    def file_handler(cls, handler=None):
+        """Setup the file handler."""
+        if not config["log.file.path"]:
+            return
+
+        log_dir = os.path.dirname(config["log.file.path"])
+        if not os.path.exists(log_dir):
+            try:
+                os.makedirs(log_dir)
+            except (IOError, OSError):
+                return handler
+
+        if not handler or handler.baseFilename != config["log.file.path"]:
+            handler = logging.FileHandler(config["log.file.path"])
+            formatter = logging.Formatter(config["log.file.format"])
+            handler.setFormatter(formatter)
+
+        handler.set_name("file_handler")
+        handler.setLevel(config["log.file.level"])
+        return handler
+
+    @classmethod
+    def cli_handler(cls, handler=None):
+        """Setup the stream handler."""
+        if not handler:
+            formatter = logging.Formatter(config["log.cli.format"])
+            handler = logging.StreamHandler(sys.stdout)
+            handler.setFormatter(formatter)
+
+        handler.set_name("cli_handler")
+        handler.setLevel(config["log.cli.level"])
+        return handler
+
+    @classmethod
+    def _get_handlers(cls, logger):
+        """Return all the handler attached to the received object."""
+        handlers = {"cli_handler": None, "file_handler": None}
+        for handler in logger.handlers:
+            handlers[handler.name] = handler
+        return handlers
+
+    def _update_handler(self, name, handler=None):
+        """Update the received handler."""
+        getter = getattr(self, name, None)
+        return getter(handler) if getter else None
+
+    def _setup_logger(self, logger):
+        """Setup the received logger."""
+        logger.setLevel(min(config["log.cli.level"],
+                            config["log.file.level"]))
+        for name, handler in self._get_handlers(logger).items():
+            new_handler = self._update_handler(name, handler)
+            if new_handler is None and handler:
+                handler.flush()
+                handler.close()
+                logger.removeHandler(handler)
+            elif new_handler and handler is None:
+                logger.addHandler(new_handler)
+
+    def get_logger(self, name):
+        """Obtain a new logger object."""
+        if name not in self._loggers:
+            logger = logging.getLogger(name)
+            logger.propagate = False
+            self._setup_logger(logger)
+            self._loggers[name] = logger
+
+        return self._loggers[name]
+
+    def update_loggers(self):
+        """Update the loggers settings if it is required."""
+        for logger in self._loggers.values():
+            self._setup_logger(logger)
+
+
+log = _Logging()
+config = _Config(defaults=constant.DEFAULTS)
+config.update()
