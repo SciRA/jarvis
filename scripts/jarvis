@@ -4,14 +4,10 @@
 import argparse
 import sys
 
-from jarvis import config
-from jarvis import log as logging
-from jarvis.client import base
-
-LOG = logging.get_logger(__name__)
+from jarvis import cli
 
 
-class JarvisClient(base.Client):
+class JarvisClient(cli.Application):
 
     """Jarvis command line application."""
 
@@ -22,32 +18,10 @@ class JarvisClient(base.Client):
         the received commands.
         """
         self._parser = argparse.ArgumentParser()
-        self._parser.add_argument(
-            "-q", "--quiet", dest="quiet", action="store_true",
-            default=False)
-        self._parser.add_argument(
-            "-v", "--verbosity", dest="verbosity", action="count",
-            help="increase output verbosity")
         commands = self._parser.add_subparsers(
             title="[commands]", dest="command")
 
         self._register_parser("commands", commands)
-
-    def prologue(self):
-        """Executed once before the command running."""
-        super(JarvisClient, self).prologue()
-
-        if self.args.quiet:
-            # Print only the errors and exceptions
-            config["log.cli.level"] = 40
-            config["log.verbosity"] = 0
-
-        elif self.args.verbosity:
-            cli_level = config["log.cli.level"] - 10 * self.args.verbosity
-            config["log.cli.level"] = cli_level if cli_level > 0 else 0
-            config["log.verbosity"] = self.args.verbosity
-
-        logging.update_loggers()
 
 
 def main():
