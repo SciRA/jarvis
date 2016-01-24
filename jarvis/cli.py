@@ -8,72 +8,10 @@ import abc
 
 import six
 
-
-@six.add_metaclass(abc.ABCMeta)
-class CLIWorker(object):
-
-    """Contract class for all the commands and clients."""
-
-    def __init__(self):
-        self._name = self.__class__.__name__
-
-    @property
-    def name(self):
-        """Command name."""
-        return self._name
-
-    @abc.abstractmethod
-    def task_done(self, result):
-        """What to execute after successfully finished processing a task."""
-        pass
-
-    @abc.abstractmethod
-    def task_fail(self, exc):
-        """What to do when the program fails processing a task."""
-        pass
-
-    @abc.abstractmethod
-    def setup(self):
-        """Extend the parser configuration in order to expose this command."""
-        pass
-
-    @abc.abstractmethod
-    def interrupted(self):
-        """What to execute when keyboard interrupts arrive."""
-        pass
-
-    def prologue(self):
-        """Executed once before the command running."""
-        pass
-
-    @abc.abstractmethod
-    def work(self):
-        """Override this with your desired procedures."""
-        pass
-
-    def epilogue(self):
-        """Executed once after the command running."""
-        pass
-
-    def run(self):
-        """Run the command."""
-        result = None
-
-        try:
-            self.prologue()
-            result = self.work()
-            self.epilogue()
-        except KeyboardInterrupt:
-            self.interrupted()
-        except exception.BCBioException as exc:
-            self.task_fail(exc)
-        else:
-            self.task_done(result)
-
-        return result
+from jarvis.worker import base
 
 
-class Command(CLIWorker):
+class Command(base.Worker):
 
     """Contract class for all the commands."""
 
@@ -220,7 +158,7 @@ class Group(object):
         pass
 
 
-class Application(Group, CLIWorker):
+class Application(Group, Worker):
 
     """Contract class for all the command line applications.
 
