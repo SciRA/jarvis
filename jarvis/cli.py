@@ -6,8 +6,6 @@ Command line application base-classes:
 
 import abc
 
-import six
-
 from jarvis.worker import base
 
 
@@ -121,8 +119,6 @@ class Group(object):
         """Bind the received commands to the current command group."""
         for command, parser in self.commands or ():
             if not self.check_command(command):
-                logger.error("The command %(command)r is not recognized.",
-                             {"command": command})
                 continue
             self.bind(command, parser)
 
@@ -158,7 +154,7 @@ class Group(object):
         pass
 
 
-class Application(Group, Worker):
+class Application(Group, base.Worker):
 
     """Contract class for all the command line applications.
 
@@ -199,7 +195,7 @@ class Application(Group, Worker):
 
     def task_fail(self, exc):
         """What to do when the program fails processing a task."""
-        logger.exception(exc)
+        pass
 
     def interrupted(self):
         """What to execute when keyboard interrupts arrive."""
@@ -231,12 +227,10 @@ class Application(Group, Worker):
     def work(self):
         """Parse the command line."""
         if not self._args:
-            logger.warning("Command line parsing failed.")
             return
 
         work_function = getattr(self._args, "work", None)
         if not work_function:
-            logger.warning("The callback function is missing for %s",
-                           self._args.work)
+            return
 
         return work_function()
