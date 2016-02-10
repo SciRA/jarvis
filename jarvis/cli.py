@@ -1,84 +1,15 @@
 """
-Client base-classes:
+Command line application base-classes:
     (Beginning of) the contract that commands and parsers must follow.
 """
 # pylint: disable=no-self-use
 
 import abc
 
-import six
-
-from jarvis import log as logging
-from jarvis.common import exception
-
-LOG = logging.get_logger(__name__)
+from jarvis.worker import base
 
 
-@six.add_metaclass(abc.ABCMeta)
-class Worker(object):
-
-    """Contract class for all the commands and clients."""
-
-    def __init__(self):
-        self._name = self.__class__.__name__
-
-    @property
-    def name(self):
-        """Command name."""
-        return self._name
-
-    @abc.abstractmethod
-    def task_done(self, result):
-        """What to execute after successfully finished processing a task."""
-        pass
-
-    @abc.abstractmethod
-    def task_fail(self, exc):
-        """What to do when the program fails processing a task."""
-        pass
-
-    @abc.abstractmethod
-    def setup(self):
-        """Extend the parser configuration in order to expose this command."""
-        pass
-
-    @abc.abstractmethod
-    def interrupted(self):
-        """What to execute when keyboard interrupts arrive."""
-        pass
-
-    def prologue(self):
-        """Executed once before the command running."""
-        pass
-
-    @abc.abstractmethod
-    def work(self):
-        """Override this with your desired procedures."""
-        pass
-
-    def epilogue(self):
-        """Executed once after the command running."""
-        pass
-
-    def run(self):
-        """Run the command."""
-        result = None
-
-        try:
-            self.prologue()
-            result = self.work()
-            self.epilogue()
-        except KeyboardInterrupt:
-            self.interrupted()
-        except exception.JarvisException as exc:
-            self.task_fail(exc)
-        else:
-            self.task_done(result)
-
-        return result
-
-
-class Command(Worker):
+class Command(base.Worker):
 
     """Contract class for all the commands."""
 
@@ -88,9 +19,6 @@ class Command(Worker):
         self._command_line = None
         self._parent = parent
         self._parser = parser
-
-        self._defaults = None
-        self._install = None
 
         self.setup()
 
@@ -129,19 +57,14 @@ class Command(Worker):
 
     def task_done(self, result):
         """What to execute after successfully finished processing a task."""
-        LOG.info("Execution of command %(name)s ends with success. "
-                 "(%(result)s)", {"name": self.name, "result": result})
+        pass
 
     def task_fail(self, exc):
         """What to do when the program fails processing a task."""
-        LOG.exception("Failed to run %(name)r: %(reason)s",
-                      {"name": self.name, "reason": exc})
         raise exc
 
     def interrupted(self):
         """What to execute when keyboard interrupts arrive."""
-        LOG.warning("Command %(name)s interrupted by the user.",
-                    {"name": self.name})
         raise KeyboardInterrupt()
 
     @abc.abstractmethod
@@ -196,8 +119,6 @@ class Group(object):
         """Bind the received commands to the current command group."""
         for command, parser in self.commands or ():
             if not self.check_command(command):
-                LOG.error("The command %(command)r is not recognized.",
-                          {"command": command})
                 continue
             self.bind(command, parser)
 
@@ -233,7 +154,7 @@ class Group(object):
         pass
 
 
-class Client(Group, Worker):
+class Application(Group, base.Worker):
 
     """Contract class for all the command line applications.
 
@@ -254,7 +175,7 @@ class Client(Group, Worker):
     """
 
     def __init__(self, command_line):
-        super(Client, self).__init__(parent=None, parser=None)
+        super(Application, self).__init__(parent=None, parser=None)
         self._args = None
         self._command_line = command_line
 
@@ -274,8 +195,7 @@ class Client(Group, Worker):
 
     def task_fail(self, exc):
         """What to do when the program fails processing a task."""
-        if not isinstance(exc, exception.JarvisException):
-            LOG.exception(exc)
+        pass
 
     def interrupted(self):
         """What to execute when keyboard interrupts arrive."""
@@ -307,11 +227,10 @@ class Client(Group, Worker):
     def work(self):
         """Parse the command line."""
         if not self._args:
-            LOG.warning("Command line parsing failed.")
             return
 
         work_function = getattr(self._args, "work", None)
         if not work_function:
-            raise exception.NotFound(object="work", container=self._args)
+            return
 
         return work_function()
