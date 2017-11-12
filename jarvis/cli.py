@@ -73,7 +73,7 @@ class Command(base.Worker):
         pass
 
     @abc.abstractmethod
-    def work(self):
+    def _work(self):
         """Override this with your desired procedures."""
         pass
 
@@ -224,7 +224,7 @@ class Application(Group, base.Worker):
         """Executed once before the command running."""
         self._args = self._parser.parse_args(self.command_line)
 
-    def work(self):
+    def _work(self):
         """Parse the command line."""
         if not self._args:
             return

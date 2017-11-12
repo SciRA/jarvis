@@ -1,4 +1,5 @@
 """Server-like task scheduler and processor."""
+
 import abc
 import time
 import threading
@@ -10,10 +11,10 @@ from jarvis.common import exception
 
 @six.add_metaclass(abc.ABCMeta)
 class Worker(object):
-
     """Contract class for all the commands and clients."""
 
     def __init__(self):
+        """Instantiate a new worker."""
         self._name = self.__class__.__name__
 
     @property
@@ -31,7 +32,7 @@ class Worker(object):
         pass
 
     @abc.abstractmethod
-    def work(self):
+    def _work(self):
         """Override this with your desired procedures."""
         pass
 
@@ -43,7 +44,7 @@ class Worker(object):
         """Run the command."""
         result = None
         self.prologue()
-        result = self.work()
+        result = self._work()
         self.epilogue()
 
         return result
@@ -51,7 +52,6 @@ class Worker(object):
 
 @six.add_metaclass(abc.ABCMeta)
 class ConcurrentWorker(Worker):
-
     """Contract class for all the concurrent workers."""
 
     def __init__(self, delay, workers_count):
@@ -64,12 +64,12 @@ class ConcurrentWorker(Worker):
 
     @abc.abstractmethod
     def _put_task(self, task):
-        """Adds a task to the queue."""
+        """Add a task to the queue."""
         pass
 
     @abc.abstractmethod
     def _get_task(self):
-        """Retrieves a task from the queue."""
+        """Retrieve a task from the queue."""
         pass
 
     @abc.abstractmethod
@@ -88,6 +88,7 @@ class ConcurrentWorker(Worker):
             # Check if all the workers are alive
             for worker in self._workers[:]:
                 if not worker.is_alive():
+                    print("not alive.")
                     self._workers.remove(worker)
 
             # Check if all the workers are running
@@ -102,25 +103,34 @@ class ConcurrentWorker(Worker):
     def prologue(self):
         """Start a parallel supervisor."""
         super(ConcurrentWorker, self).prologue()
+        print("Starting management thread.")
         self._manager = threading.Thread(target=self._manage_workers)
         self._manager.start()
 
+    def _work(self):
+        """Add tasks in the processing queue."""
+        print("Main thread is starting to add tasks.")
+        for task in self._task_generator():
+            print("Adding new task in processing queue.")
+            self._put_task(task)
+            time.sleep(self._delay)
+        print("No other task available.")
+
     def run(self):
-        """Starts a series of workers and processes incoming tasks."""
+        """Start a series of workers and processes incoming tasks."""
         self.prologue()
         try:
-            while not self._stop_event.is_set():
-                # Adding task in the processing queue
-                for task in self._task_generator():
-                    self._put_task(task)
-                time.sleep(self._delay)
+            self._work()
         except KeyboardInterrupt:
             self.on_interrupted()
         self.epilogue()
 
     def epilogue(self):
         """Wait for that supervisor and its workers."""
+        print("Waiting for management thread to go down.")
         self._manager.join()
+
+        print("Waiting for worker threads to finish thir work.")
         for worker in self._workers:
             if worker.is_alive():
                 worker.join()
@@ -130,7 +140,6 @@ class ConcurrentWorker(Worker):
 
 @six.add_metaclass(abc.ABCMeta)
 class Task(Worker):
-
     """Contract class for all the tasks."""
 
     def __init__(self, executor=None):
@@ -149,8 +158,12 @@ class Task(Worker):
         if callback:
             callback(self, exc)
 
+    def on_interrupted(self):
+        """What to execute when keyboard interrupts arrive."""
+        pass
+
     @abc.abstractmethod
-    def work(self):
+    def _work(self):
         """Override this with your desired procedures."""
         pass
 
@@ -160,11 +173,13 @@ class Task(Worker):
 
         self.prologue()
         try:
-            result = self.work()
-        except exception.JarvisException as exc:
-            self.task_fail(exc)
+            result = self._work()
         except KeyboardInterrupt:
             self.on_interrupted()
+        except exception.JarvisException as exc:
+            self.task_fail(exc)
+        except Exception as exc:
+            self.task_fail(exc)
         else:
             self.task_done(result)
         self.epilogue()

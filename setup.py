@@ -9,11 +9,11 @@ except ImportError:
 
 setup(
     name="jarvis",
-    version="0.1",
+    version="0.1.1",
     description="Just A Rather Very Intelligent System",
     long_description=open("README.md").read(),
-    author="c-square",
-    url="https://github.com/c-square/evorepo-common",
+    author="SciRA",
+    url="https://github.com/SciRA/jarvis",
     packages=["jarvis"],
     scripts=["scripts/jarvis"],
     requires=[]

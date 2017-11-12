@@ -1,4 +1,4 @@
-"""Watson's base exception handling."""
+"""Jarvis's base exception handling."""
 
 
 class JarvisException(Exception):
